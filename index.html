@@ -1,6 +1,1174 @@
-git init
-git add index.html
-git commit -m "Initial StormVision AI Dashboard UI"
-git branch -M main
-git remote add origin <your-github-repo-url>
-git push -u origin main
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StormVision AI - Cyclone & Disaster Management Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+        }
+
+        .font-orbitron {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Glassmorphism Effect */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.15);
+        }
+
+        .glass-panel-hover:hover {
+            border-color: rgba(56, 189, 248, 0.4);
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.15);
+        }
+
+        /* Glowing accents */
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
+        }
+        
+        .glow-red {
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #0284c7;
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden flex flex-col antialiased">
+
+    <!-- Top Header -->
+    <header class="h-16 bg-slate-950/90 border-b border-cyan-900/40 px-6 flex items-center justify-between z-30 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="p-2 bg-cyan-500/10 rounded-lg border border-cyan-500/30 text-cyan-400">
+                <i data-lucide="cloud-lightning" class="w-6 h-6 animate-pulse"></i>
+            </div>
+            <div>
+                <h1 class="font-orbitron font-extrabold text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400">
+                    STORMVISION <span class="text-cyan-400 font-normal text-xs px-2 py-0.5 rounded bg-cyan-950 border border-cyan-500/40">AI v2.4</span>
+                </h1>
+                <p class="text-[10px] text-slate-400 font-medium tracking-wide">SIH DISASTER MANAGEMENT PLATFORM</p>
+            </div>
+        </div>
+
+        <!-- Live Metrics Bar -->
+        <div class="hidden lg:flex items-center space-x-6 text-xs">
+            <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-md border border-slate-800">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                <span class="text-slate-400">System Status:</span>
+                <span class="text-emerald-400 font-semibold">LIVE SATELLITE FEED</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-md border border-slate-800">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span class="text-slate-400">Region:</span>
+                <span class="text-slate-200 font-medium">Bay of Bengal (Zone 4)</span>
+            </div>
+            <div class="flex items-center space-x-2 bg-slate-900/80 px-3 py-1.5 rounded-md border border-slate-800">
+                <i data-lucide="clock" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span id="live-time" class="font-mono text-cyan-300">00:00:00 UTC</span>
+            </div>
+        </div>
+
+        <!-- System Controls -->
+        <div class="flex items-center space-x-3">
+            <button onclick="toggleApiModal()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 rounded-lg text-xs font-medium text-slate-300 flex items-center space-x-2 transition-all">
+                <i data-lucide="settings" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span>API Config</span>
+                <span id="api-status-badge" class="w-2 h-2 rounded-full bg-amber-400"></span>
+            </button>
+            <button class="px-3 py-1.5 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/40 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all glow-red">
+                <i data-lucide="radio" class="w-3.5 h-3.5 animate-pulse"></i>
+                <span>BROADCAST ALERT</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-slate-950/80 border-r border-slate-800/80 flex flex-col justify-between shrink-0 z-20">
+            <div class="p-4 space-y-1">
+                <p class="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-2">Core Modules</p>
+                
+                <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-all bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>Overview & Radar</span>
+                </button>
+                
+                <button onclick="switchTab('prediction')" id="nav-prediction" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all">
+                    <i data-lucide="cpu" class="w-4 h-4"></i>
+                    <span>AI Risk Predictor</span>
+                </button>
+                
+                <button onclick="switchTab('resources')" id="nav-resources" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all">
+                    <i data-lucide="shield-alert" class="w-4 h-4"></i>
+                    <span>Rescue & Shelters</span>
+                </button>
+                
+                <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-900 transition-all">
+                    <i data-lucide="line-chart" class="w-4 h-4"></i>
+                    <span>Historical Analytics</span>
+                </button>
+            </div>
+
+            <!-- Active Alert Box -->
+            <div class="p-4 m-3 bg-red-950/40 border border-red-500/30 rounded-xl">
+                <div class="flex items-center space-x-2 text-red-400 mb-1">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                    <span class="font-orbitron text-xs font-bold">WARNING ACTIVE</span>
+                </div>
+                <p class="text-[11px] text-slate-300 leading-tight">Cyclone 'AMPHAN-II' intensifying. Estimated landfall in 14 hrs near Odisha Coast.</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Panel -->
+        <main class="flex-1 overflow-y-auto p-6 bg-slate-950/40 relative">
+
+            <!-- TAB 1: OVERVIEW & RADAR -->
+            <div id="tab-overview" class="tab-content space-y-6">
+                <!-- Top Stat Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="glass-panel p-4 rounded-xl border-l-4 border-l-cyan-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-slate-400">Peak Wind Velocity</p>
+                                <h3 class="text-2xl font-orbitron font-bold text-white mt-1">185 <span class="text-sm font-normal text-cyan-400">km/h</span></h3>
+                            </div>
+                            <div class="p-2 bg-cyan-500/10 rounded-lg text-cyan-400"><i data-lucide="wind" class="w-5 h-5"></i></div>
+                        </div>
+                        <p class="text-[11px] text-emerald-400 mt-2 flex items-center">
+                            <i data-lucide="trending-up" class="w-3 h-3 mr-1"></i> +12 km/h in past 3 hrs
+                        </p>
+                    </div>
+
+                    <div class="glass-panel p-4 rounded-xl border-l-4 border-l-rose-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-slate-400">Central Pressure</p>
+                                <h3 class="text-2xl font-orbitron font-bold text-white mt-1">942 <span class="text-sm font-normal text-rose-400">hPa</span></h3>
+                            </div>
+                            <div class="p-2 bg-rose-500/10 rounded-lg text-rose-400"><i data-lucide="gauge" class="w-5 h-5"></i></div>
+                        </div>
+                        <p class="text-[11px] text-rose-400 mt-2 flex items-center">
+                            <i data-lucide="trending-down" class="w-3 h-3 mr-1"></i> Rapid intensification
+                        </p>
+                    </div>
+
+                    <div class="glass-panel p-4 rounded-xl border-l-4 border-l-amber-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-slate-400">Sea Surface Temp</p>
+                                <h3 class="text-2xl font-orbitron font-bold text-white mt-1">31.2 <span class="text-sm font-normal text-amber-400">°C</span></h3>
+                            </div>
+                            <div class="p-2 bg-amber-500/10 rounded-lg text-amber-400"><i data-lucide="thermometer" class="w-5 h-5"></i></div>
+                        </div>
+                        <p class="text-[11px] text-amber-400 mt-2">2.4°C above monthly average</p>
+                    </div>
+
+                    <div class="glass-panel p-4 rounded-xl border-l-4 border-l-purple-500">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-slate-400">Calculated Severity Index</p>
+                                <h3 class="text-2xl font-orbitron font-bold text-purple-300 mt-1">CAT 4</h3>
+                            </div>
+                            <div class="p-2 bg-purple-500/10 rounded-lg text-purple-400"><i data-lucide="zap" class="w-5 h-5"></i></div>
+                        </div>
+                        <p class="text-[11px] text-purple-400 mt-2">Extreme Disaster Threat</p>
+                    </div>
+                </div>
+
+                <!-- Radar Canvas & Live Alerts Section -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Live Doppler Radar Canvas -->
+                    <div class="lg:col-span-2 glass-panel p-4 rounded-xl flex flex-col h-[480px]">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="radar" class="w-5 h-5 text-cyan-400 animate-spin"></i>
+                                <h2 class="font-orbitron font-semibold text-sm text-slate-200">LIVE DOPPLER RADAR SIMULATION</h2>
+                            </div>
+                            <div class="flex space-x-2 text-xs">
+                                <button class="px-2.5 py-1 bg-cyan-950 border border-cyan-500/50 text-cyan-300 rounded">Radar</button>
+                                <button class="px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 rounded">Wind Vector</button>
+                                <button class="px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-400 hover:text-slate-200 rounded">Thermal IR</button>
+                            </div>
+                        </div>
+                        <div class="relative flex-1 bg-slate-950 rounded-lg overflow-hidden border border-slate-800">
+                            <canvas id="radarCanvas" class="w-full h-full block"></canvas>
+                            <div class="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur px-3 py-1.5 rounded-md border border-slate-800 text-[11px] text-slate-300">
+                                Coordinates: <span class="text-cyan-400 font-mono">18.4° N, 88.2° E</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Live Emergency Broadcast Feed -->
+                    <div class="glass-panel p-4 rounded-xl flex flex-col h-[480px]">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-2">
+                                <i data-lucide="bell" class="w-4 h-4 text-rose-400"></i>
+                                <h2 class="font-orbitron font-semibold text-sm text-slate-200">EMERGENCY FEED</h2>
+                            </div>
+                            <span class="text-[10px] bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded border border-rose-500/30">REAL-TIME</span>
+                        </div>
+                        <div class="flex-1 overflow-y-auto space-y-3 pr-1">
+                            <div class="p-3 bg-slate-900/80 rounded-lg border border-red-500/30">
+                                <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                                    <span class="text-red-400 font-bold">CRITICAL ADVISORY</span>
+                                    <span>2 mins ago</span>
+                                </div>
+                                <p class="text-xs text-slate-200">NDRF deployment ordered for Balasore & Kendrapara coastal zones.</p>
+                            </div>
+
+                            <div class="p-3 bg-slate-900/80 rounded-lg border border-amber-500/30">
+                                <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                                    <span class="text-amber-400 font-bold">PORT WARNING</span>
+                                    <span>14 mins ago</span>
+                                </div>
+                                <p class="text-xs text-slate-200">Great Danger Signal No. 10 hoisted at Paradip and Dhamra ports.</p>
+                            </div>
+
+                            <div class="p-3 bg-slate-900/80 rounded-lg border border-slate-800">
+                                <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                                    <span class="text-cyan-400 font-bold">SATELLITE UPDATE</span>
+                                    <span>35 mins ago</span>
+                                </div>
+                                <p class="text-xs text-slate-200">INSAT-3D thermal imagery shows eye-wall consolidation complete.</p>
+                            </div>
+
+                            <div class="p-3 bg-slate-900/80 rounded-lg border border-slate-800">
+                                <div class="flex justify-between text-[11px] text-slate-400 mb-1">
+                                    <span class="text-emerald-400 font-bold">SHELTER STATUS</span>
+                                    <span>1 hr ago</span>
+                                </div>
+                                <p class="text-xs text-slate-200">142 multi-purpose cyclone shelters activated in West Bengal districts.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: AI RISK PREDICTOR -->
+            <div id="tab-prediction" class="tab-content space-y-6 hidden">
+                <div class="glass-panel p-6 rounded-xl">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <i data-lucide="sliders" class="w-6 h-6 text-cyan-400"></i>
+                        <div>
+                            <h2 class="font-orbitron text-lg font-bold text-white">AI Storm Severity & Track Simulator</h2>
+                            <p class="text-xs text-slate-400">Adjust meteorological parameters to execute ML inference prediction model.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <!-- Input Parameters -->
+                        <div class="space-y-5">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Sea Surface Temperature (°C)</span>
+                                    <span id="val-temp" class="text-cyan-400 font-bold">30.5 °C</span>
+                                </div>
+                                <input type="range" id="input-temp" min="24" max="35" step="0.1" value="30.5" class="w-full accent-cyan-500 bg-slate-800 rounded-lg h-2" oninput="updatePrediction()">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Atmospheric Pressure (hPa)</span>
+                                    <span id="val-pressure" class="text-cyan-400 font-bold">950 hPa</span>
+                                </div>
+                                <input type="range" id="input-pressure" min="880" max="1013" step="1" value="950" class="w-full accent-cyan-500 bg-slate-800 rounded-lg h-2" oninput="updatePrediction()">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Sustained Wind Speed (km/h)</span>
+                                    <span id="val-wind" class="text-cyan-400 font-bold">165 km/h</span>
+                                </div>
+                                <input type="range" id="input-wind" min="40" max="280" step="1" value="165" class="w-full accent-cyan-500 bg-slate-800 rounded-lg h-2" oninput="updatePrediction()">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Relative Humidity (%)</span>
+                                    <span id="val-humidity" class="text-cyan-400 font-bold">88%</span>
+                                </div>
+                                <input type="range" id="input-humidity" min="40" max="100" step="1" value="88" class="w-full accent-cyan-500 bg-slate-800 rounded-lg h-2" oninput="updatePrediction()">
+                            </div>
+                        </div>
+
+                        <!-- Computed Output Card -->
+                        <div class="bg-slate-900/90 border border-cyan-500/30 rounded-xl p-6 flex flex-col justify-between">
+                            <div>
+                                <span class="text-[10px] font-semibold tracking-wider text-cyan-400 uppercase">AI Neural Network Prediction</span>
+                                <h3 id="pred-risk-title" class="text-2xl font-orbitron font-bold text-red-400 mt-2">HIGH RISK - CAT 3 CYCLONE</h3>
+                                <p id="pred-desc" class="text-xs text-slate-300 mt-2 leading-relaxed">
+                                    Condition matrix indicates high intensification probability within 12 hours. High storm surge vulnerability for low-lying coastal sectors.
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 my-6">
+                                <div class="p-3 bg-slate-950 rounded-lg border border-slate-800">
+                                    <p class="text-[10px] text-slate-400">Storm Surge Height</p>
+                                    <p id="pred-surge" class="text-lg font-orbitron font-bold text-cyan-400">4.2 - 5.5 m</p>
+                                </div>
+                                <div class="p-3 bg-slate-950 rounded-lg border border-slate-800">
+                                    <p class="text-[10px] text-slate-400">Estimated Landfall Window</p>
+                                    <p id="pred-landfall" class="text-lg font-orbitron font-bold text-amber-400">12 - 16 Hrs</p>
+                                </div>
+                            </div>
+
+                            <button class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-lg transition-all text-xs uppercase tracking-wider">
+                                Export AI Forecast Bulletin (PDF)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: RESCUE & SHELTERS -->
+            <div id="tab-resources" class="tab-content space-y-6 hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 glass-panel p-5 rounded-xl">
+                        <h2 class="font-orbitron font-semibold text-sm text-slate-200 mb-4">ACTIVE DISASTER SHELTERS & OCCUPANCY</h2>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Balasore Sector A Shelter</span>
+                                    <span class="text-red-400 font-bold">92% Occupied (1,840 / 2,000)</span>
+                                </div>
+                                <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                                    <div class="bg-red-500 h-full" style="width: 92%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Paradip Central High School Shelter</span>
+                                    <span class="text-amber-400 font-bold">78% Occupied (1,560 / 2,000)</span>
+                                </div>
+                                <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                                    <div class="bg-amber-500 h-full" style="width: 78%"></div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs text-slate-300 mb-1">
+                                    <span>Digha Coastal Cyclone Facility</span>
+                                    <span class="text-emerald-400 font-bold">45% Occupied (670 / 1,500)</span>
+                                </div>
+                                <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                                    <div class="bg-emerald-500 h-full" style="width: 45%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-5 rounded-xl">
+                        <h2 class="font-orbitron font-semibold text-sm text-slate-200 mb-4">NDRF TEAMS DEPLOYMENT</h2>
+                        <div class="space-y-3 text-xs">
+                            <div class="p-3 bg-slate-900 rounded-lg flex justify-between items-center border border-slate-800">
+                                <div>
+                                    <p class="font-bold text-slate-200">NDRF Battalion 03</p>
+                                    <p class="text-[10px] text-slate-400">Location: Kendrapara</p>
+                                </div>
+                                <span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded text-[10px]">DEPLOYED</span>
+                            </div>
+
+                            <div class="p-3 bg-slate-900 rounded-lg flex justify-between items-center border border-slate-800">
+                                <div>
+                                    <p class="font-bold text-slate-200">NDRF Battalion 07</p>
+                                    <p class="text-[10px] text-slate-400">Location: Kakdwip</p>
+                                </div>
+                                <span class="px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded text-[10px]">IN TRANSIT</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: HISTORICAL ANALYTICS -->
+            <div id="tab-analytics" class="tab-content space-y-6 hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="glass-panel p-5 rounded-xl">
+                        <h2 class="font-orbitron font-semibold text-sm text-slate-200 mb-4">PRESSURE VS WIND SPEED HISTORY</h2>
+                        <div class="h-64">
+                            <canvas id="analyticsChart1"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-5 rounded-xl">
+                        <h2 class="font-orbitron font-semibold text-sm text-slate-200 mb-4">BAY OF BENGAL CYCLONE FREQUENCY</h2>
+                        <div class="h-64">
+                            <canvas id="analyticsChart2"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- API CONFIG MODAL -->
+    <div id="api-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="glass-panel p-6 rounded-2xl max-w-md w-full border border-cyan-500/40">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-orbitron font-bold text-slate-200 text-sm">BACKEND API CONFIGURATION</h3>
+                <button onclick="toggleApiModal()" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">API Base Endpoint URL</label>
+                    <input type="text" id="api-url-input" value="http://localhost:8000/api/v1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-cyan-300 font-mono focus:outline-none focus:border-cyan-500">
+                </div>
+
+                <div>
+                    <label class="block text-slate-400 mb-1">Data Source Mode</label>
+                    <select id="api-mode-select" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-200 focus:outline-none">
+                        <option value="simulated">Simulated AI Telemetry Mode</option>
+                        <option value="live">Live FastAPI/Python Backend Mode</option>
+                    </select>
+                </div>
+
+                <div class="p-3 bg-slate-950 rounded-lg border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                    <p class="text-cyan-400 font-semibold">Backend Connection Status:</p>
+                    <p id="connection-status-text">Using local browser simulation engine.</p>
+                </div>
+            </div>
+
+            <div class="flex space-x-3 mt-6">
+                <button onclick="saveApiConfig()" class="flex-1 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-lg text-xs uppercase">Save & Connect</button>
+                <button onclick="toggleApiModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg text-xs">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript logic -->
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        // Live Clock
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('live-time').innerText = now.toUTCString().split(' ')[4] + ' UTC';
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Tab Navigation
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('bg-cyan-500/10', 'text-cyan-400', 'border', 'border-cyan-500/30');
+                el.classList.add('text-slate-400');
+            });
+
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabId}`);
+            activeBtn.classList.add('bg-cyan-500/10', 'text-cyan-400', 'border', 'border-cyan-500/30');
+            activeBtn.classList.remove('text-slate-400');
+        }
+
+        // Radar Canvas Simulation
+        const canvas = document.getElementById('radarCanvas');
+        const ctx = canvas.getContext('2d');
+        let sweepAngle = 0;
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawRadar() {
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = Math.min(width, height) * 0.42;
+
+            ctx.clearRect(0, 0, width, height);
+
+            // Concentric Rings
+            ctx.strokeStyle = 'rgba(6, 182, 212, 0.2)';
+            ctx.lineWidth = 1;
+            for (let i = 1; i <= 4; i++) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, (radius / 4) * i, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Crosshairs
+            ctx.beginPath();
+            ctx.moveTo(Here is the complete, single-file HTML, CSS, and JavaScript code for your **StormVision AI Dashboard**.
+
+Copy the entire block below and paste it directly into your `index.html` file on GitHub:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StormVision AI - Dynamic Meteorological Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="[https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css](https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css)">
+    <!-- Chart.js -->
+    <script src="[https://cdn.jsdelivr.net/npm/chart.js](https://cdn.jsdelivr.net/npm/chart.js)"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0B0F19',
+                            card: '#151C2C',
+                            border: '#232E47',
+                            accent: '#00F2FE',
+                            blue: '#4FACFE',
+                            danger: '#FF4B4B',
+                            warning: '#FFB800',
+                            success: '#00E676'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0B0F19;
+            color: #E2E8F0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            overflow-x: hidden;
+        }
+        .glass-panel {
+            background: rgba(21, 28, 44, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .glow-accent {
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+        }
+        .glow-danger {
+            box-shadow: 0 0 15px rgba(255, 75, 75, 0.4);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0F19;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #232E47;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00F2FE;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="w-64 glass-panel flex flex-col justify-between p-4 z-20 border-r border-slate-800">
+        <div>
+            <!-- Logo Header -->
+            <div class="flex items-center space-x-3 pb-6 border-b border-slate-800 mb-6">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-blue to-brand-accent flex items-center justify-center shadow-lg shadow-cyan-500/30">
+                    <i class="fa-solid fa-tornado text-slate-900 text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-wider text-white">StormVision<span class="text-brand-accent">.AI</span></h1>
+                    <p class="text-xs text-slate-400">SIH Early Warning Ops</p>
+                </div>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="space-y-1">
+                <a href="#" onclick="switchTab('overview')" id="nav-overview" class="nav-item active flex items-center space-x-3 px-4 py-3 rounded-xl bg-gradient-to-r from-cyan-500/20 to-transparent text-brand-accent border-l-4 border-brand-accent font-medium transition-all">
+                    <i class="fa-solid fa-chart-line w-5"></i>
+                    <span>Overview</span>
+                </a>
+                <a href="#" onclick="switchTab('radar')" id="nav-radar" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all">
+                    <i class="fa-solid fa-radar w-5"></i>
+                    <span>Live Radar & Map</span>
+                </a>
+                <a href="#" onclick="switchTab('prediction')" id="nav-prediction" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all">
+                    <i class="fa-solid fa-brain w-5"></i>
+                    <span>AI Prediction Tool</span>
+                </a>
+                <a href="#" onclick="switchTab('alerts')" id="nav-alerts" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all">
+                    <i class="fa-solid fa-triangle-exclamation w-5"></i>
+                    <span>Emergency Alerts</span>
+                </a>
+                <a href="#" onclick="switchTab('resources')" id="nav-resources" class="nav-item flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all">
+                    <i class="fa-solid fa-boxes-packing w-5"></i>
+                    <span>Resource Management</span>
+                </a>
+            </nav>
+        </div>
+
+        <!-- Live Status / Mode Badge -->
+        <div class="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-slate-400">Data Source:</span>
+                <span id="current-mode-badge" class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold text-[10px]">SIMULATED</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                <span class="text-slate-300 truncate">Bay of Bengal Sector 4</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 flex flex-col h-screen overflow-y-auto bg-slate-950 relative">
+        
+        <!-- TOP HEADER BAR -->
+        <header class="h-16 glass-panel px-6 flex items-center justify-between sticky top-0 z-10 border-b border-slate-800">
+            <div class="flex items-center space-x-4">
+                <h2 id="page-title" class="text-xl font-bold text-white tracking-wide">Command Center Overview</h2>
+                <span class="text-xs px-2.5 py-1 rounded-md bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center gap-1 font-mono">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span> CYCLONE WARNING: CAT 4
+                </span>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <button onclick="toggleApiModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm border border-slate-700 flex items-center space-x-2 transition-all">
+                    <i class="fa-solid fa-gear text-brand-accent"></i>
+                    <span>Backend Config</span>
+                </button>
+                <div class="h-6 w-px bg-slate-800"></div>
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-sm text-brand-accent font-bold">
+                        ND
+                    </div>
+                    <div class="hidden md:block">
+                        <p class="text-xs font-semibold text-white">NDRF Controller</p>
+                        <p class="text-[10px] text-slate-400">HQ Eastern Zone</p>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- DASHBOARD CONTAINER -->
+        <div class="p-6 space-y-6">
+
+            <!-- METRIC CARDS ROW -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">Current Wind Speed</p>
+                            <h3 class="text-2xl font-bold text-white mt-1" id="stat-wind">185 km/h</h3>
+                            <p class="text-xs text-rose-400 mt-1 flex items-center gap-1">
+                                <i class="fa-solid fa-arrow-up"></i> +12 km/h in past 3h
+                            </p>
+                        </div>
+                        <div class="p-3 bg-cyan-500/10 rounded-xl text-brand-accent">
+                            <i class="fa-solid fa-wind text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">Central Pressure</p>
+                            <h3 class="text-2xl font-bold text-white mt-1" id="stat-pressure">945 hPa</h3>
+                            <p class="text-xs text-amber-400 mt-1 flex items-center gap-1">
+                                <i class="fa-solid fa-arrow-down"></i> Rapid Deepening
+                            </p>
+                        </div>
+                        <div class="p-3 bg-blue-500/10 rounded-xl text-brand-blue">
+                            <i class="fa-solid fa-gauge-high text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">Est. Landfall</p>
+                            <h3 class="text-2xl font-bold text-white mt-1" id="stat-landfall">14h 25m</h3>
+                            <p class="text-xs text-slate-400 mt-1">Target: Odisha Coast</p>
+                        </div>
+                        <div class="p-3 bg-purple-500/10 rounded-xl text-purple-400">
+                            <i class="fa-solid fa-clock text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-4 rounded-2xl relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <p class="text-xs text-slate-400 font-medium uppercase tracking-wider">AI Storm Risk Index</p>
+                            <h3 class="text-2xl font-bold text-rose-500 mt-1" id="stat-risk">92.4 / 100</h3>
+                            <p class="text-xs text-rose-400 mt-1">Critical Evacuation Zone</p>
+                        </div>
+                        <div class="p-3 bg-rose-500/10 rounded-xl text-rose-500">
+                            <i class="fa-solid fa-shield-halved text-xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MAIN RADAR & ANALYTICS SECTION -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- LIVE RADAR CANVAS CARD (2 COLS) -->
+                <div class="lg:col-span-2 glass-panel p-5 rounded-2xl flex flex-col justify-between relative min-h-[420px]">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-satellite text-brand-accent"></i>
+                            <h3 class="font-bold text-white text-base">Live Doppler Radar & Vector Trajectory</h3>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="setRadarLayer('radar')" class="px-2.5 py-1 text-xs rounded-lg bg-cyan-500/20 text-brand-accent border border-cyan-500/30">Doppler</button>
+                            <button onclick="setRadarLayer('wind')" class="px-2.5 py-1 text-xs rounded-lg bg-slate-800 text-slate-400 hover:text-white">Wind Vectors</button>
+                            <button onclick="setRadarLayer('thermal')" class="px-2.5 py-1 text-xs rounded-lg bg-slate-800 text-slate-400 hover:text-white">IR Thermal</button>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Frame -->
+                    <div class="relative flex-1 bg-slate-950 rounded-xl border border-slate-800/80 overflow-hidden flex items-center justify-center">
+                        <canvas id="radarCanvas" class="w-full h-full block"></canvas>
+
+                        <!-- Canvas Overlay HUD -->
+                        <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur p-2.5 rounded-lg border border-slate-800 text-xs font-mono space-y-1">
+                            <div class="text-slate-400">EYE LOC: <span class="text-white">19.82°N, 86.21°E</span></div>
+                            <div class="text-slate-400">HEADING: <span class="text-brand-accent">315° NW (18 knots)</span></div>
+                            <div class="text-slate-400">RADIUS: <span class="text-rose-400">45 km Eye / 280 km Outer</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT PANEL: AI PARAMETER CONTROLLER -->
+                <div class="glass-panel p-5 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-white text-base flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-brand-accent"></i> AI Risk Model Simulator
+                            </h3>
+                            <span class="text-xs text-slate-400">Adjust Parameters</span>
+                        </div>
+
+                        <!-- Sliders -->
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Sea Surface Temp (°C)</span>
+                                    <span id="val-temp" class="text-brand-accent font-bold">31.2 °C</span>
+                                </div>
+                                <input type="range" id="input-temp" min="24" max="35" step="0.1" value="31.2" oninput="updatePrediction()" class="w-full accent-cyan-400 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Atmospheric Pressure (hPa)</span>
+                                    <span id="val-pres" class="text-brand-accent font-bold">945 hPa</span>
+                                </div>
+                                <input type="range" id="input-pres" min="900" max="1010" step="1" value="945" oninput="updatePrediction()" class="w-full accent-cyan-400 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Max Wind Speed (km/h)</span>
+                                    <span id="val-wind" class="text-brand-accent font-bold">185 km/h</span>
+                                </div>
+                                <input type="range" id="input-wind" min="40" max="300" step="1" value="185" oninput="updatePrediction()" class="w-full accent-cyan-400 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                            </div>
+
+                            <div>
+                                <div class="flex justify-between text-xs mb-1">
+                                    <span class="text-slate-300">Relative Humidity (%)</span>
+                                    <span id="val-hum" class="text-brand-accent font-bold">88 %</span>
+                                </div>
+                                <input type="range" id="input-hum" min="40" max="100" step="1" value="88" oninput="updatePrediction()" class="w-full accent-cyan-400 bg-slate-800 h-2 rounded-lg cursor-pointer">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Computed Model Score Box -->
+                    <div class="mt-6 p-4 rounded-xl bg-slate-900/90 border border-slate-800 text-center">
+                        <p class="text-xs text-slate-400 uppercase font-semibold">Predicted Category</p>
+                        <h4 id="calc-category" class="text-2xl font-extrabold text-rose-500 mt-1">Very Severe Cyclonic Storm</h4>
+                        <p id="calc-desc" class="text-xs text-slate-300 mt-1">High probability of storm surge (>4.5m)</p>
+                        
+                        <button onclick="runAiInference()" class="w-full mt-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-blue to-brand-accent text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/20 hover:opacity-95 transition-all">
+                            Run Deep Neural Net Prediction
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LOWER ROW: CHARTS & EMERGENCY RESOURCING -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- CHART CARD -->
+                <div class="glass-panel p-5 rounded-2xl">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-white text-base flex items-center gap-2">
+                            <i class="fa-solid fa-chart-area text-brand-blue"></i> Intensity Trend (24h Window)
+                        </h3>
+                    </div>
+                    <div class="h-64 relative">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- RESOURCE DISPATCH TRACKER -->
+                <div class="glass-panel p-5 rounded-2xl flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-white text-base flex items-center gap-2">
+                                <i class="fa-solid fa-truck-medical text-emerald-400"></i> NDRF Emergency Dispatch
+                            </h3>
+                            <span class="text-xs px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400">Active Deployment</span>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center text-brand-blue">
+                                        <i class="fa-solid fa-user-shield"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-white">Puri Relief Battalion #4</p>
+                                        <p class="text-xs text-slate-400">45 Personnel • 12 Boats Deployment</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-semibold px-2 py-1 rounded bg-amber-500/20 text-amber-400">In Transit</span>
+                            </div>
+
+                            <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                                        <i class="fa-solid fa-house-chimney-medical"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-white">Bhadrak Evacuation Shelter</p>
+                                        <p class="text-xs text-slate-400">Capacity: 1,850 / 2,000 filled</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-semibold px-2 py-1 rounded bg-rose-500/20 text-rose-400">92% Full</span>
+                            </div>
+
+                            <div class="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400">
+                                        <i class="fa-solid fa-satellite-dish"></i>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-white">Coastal Tower #12 Communication</p>
+                                        <p class="text-xs text-slate-400">Satellite Link Active (HAM Backup)</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-semibold px-2 py-1 rounded bg-emerald-500/20 text-emerald-400">Online</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="w-full mt-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all">
+                        View Full Resource Allocation Map
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- BACKEND CONFIG MODAL -->
+    <div id="apiModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="glass-panel w-full max-w-md p-6 rounded-2xl border border-slate-700 shadow-2xl relative">
+            <button onclick="toggleApiModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <i class="fa-solid fa-server text-brand-accent"></i> Backend API Connection Settings
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">Connect this dashboard to your live Python (FastAPI/Flask) backend or leave in simulation mode.</p>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Data Source Mode</label>
+                    <select id="api-mode-select" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-accent">
+                        <option value="simulated">Simulated Client-Side Model (Offline/Demo)</option>
+                        <option value="live">Live FastAPI Backend Server</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Backend Base URL</label>
+                    <input type="text" id="api-url-input" value="http://localhost:8000" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-brand-accent">
+                </div>
+
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-[11px] text-slate-400 space-y-1">
+                    <p class="font-bold text-slate-300">Expected API Endpoint:</p>
+                    <p class="font-mono text-brand-accent">POST /api/v1/predict-cyclone</p>
+                </div>
+
+                <button onclick="saveApiSettings()" class="w-full py-2.5 rounded-xl bg-brand-accent text-slate-950 font-bold text-sm">
+                    Save Configuration
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- Navigation ---
+        function switchTab(tabName) {
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('active', 'bg-gradient-to-r', 'from-cyan-500/20', 'to-transparent', 'text-brand-accent', 'border-l-4', 'border-brand-accent');
+                el.classList.add('text-slate-400');
+            });
+            
+            const selected = document.getElementById(`nav-${tabName}`);
+            if (selected) {
+                selected.classList.remove('text-slate-400');
+                selected.classList.add('active', 'bg-gradient-to-r', 'from-cyan-500/20', 'to-transparent', 'text-brand-accent', 'border-l-4', 'border-brand-accent');
+            }
+
+            const titles = {
+                'overview': 'Command Center Overview',
+                'radar': 'High-Resolution Doppler Radar',
+                'prediction': 'AI Machine Learning Prediction Module',
+                'alerts': 'Emergency Alert Broadcasting',
+                'resources': 'NDRF Resource Allocation Tracker'
+            };
+            document.getElementById('page-title').innerText = titles[tabName] || 'Command Center';
+        }
+
+        // --- Interactive Radar Simulation ---
+        const canvas = document.getElementById('radarCanvas');
+        const ctx = canvas.getContext('2d');
+        let radarAngle = 0;
+        let radarLayer = 'radar';
+
+        function resizeCanvas() {
+            if (canvas.parentElement) {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function drawRadar() {
+            const width = canvas.width;
+            const height = canvas.height;
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const maxRadius = Math.min(width, height) * 0.42;
+
+            // Clear background
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(0, 0, width, height);
+
+            // Concentric Rings
+            ctx.strokeStyle = 'rgba(0, 242, 254, 0.15)';
+            ctx.lineWidth = 1;
+            for (let r = 1; r <= 4; r++) {
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, (maxRadius / 4) * r, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Crosshairs
+            ctx.beginPath();
+            ctx.moveTo(centerX - maxRadius, centerY);
+            ctx.lineTo(centerX + maxRadius, centerY);
+            ctx.moveTo(centerX, centerY - maxRadius);
+            ctx.lineTo(centerX, centerY + maxRadius);
+            ctx.stroke();
+
+            // Simulated Cyclone Eye & Arms
+            const stormX = centerX + Math.cos(Date.now() * 0.0005) * 20;
+            const stormY = centerY + Math.sin(Date.now() * 0.0005) * 20;
+
+            // Spiral Storm Cloud Rings
+            for (let i = 0; i < 350; i++) {
+                const angle = i * 0.08 + Date.now() * 0.001;
+                const dist = (i / 350) * maxRadius * 0.85;
+                const x = stormX + Math.cos(angle) * dist;
+                const y = stormY + Math.sin(angle) * dist;
+
+                ctx.beginPath();
+                ctx.arc(x, y, (i / 350) * 8 + 2, 0, Math.PI * 2);
+                if (radarLayer === 'radar') {
+                    ctx.fillStyle = i > 250 ? 'rgba(255, 75, 75, 0.4)' : i > 120 ? 'rgba(255, 184, 0, 0.3)' : 'rgba(0, 242, 254, 0.2)';
+                } else if (radarLayer === 'thermal') {
+                    ctx.fillStyle = i > 200 ? 'rgba(168, 85, 247, 0.5)' : 'rgba(59, 130, 246, 0.3)';
+                } else {
+                    ctx.fillStyle = 'rgba(16, 185, 129, 0.3)';
+                }
+                ctx.fill();
+            }
+
+            // Eye Center Indicator
+            ctx.beginPath();
+            ctx.arc(stormX, stormY, 8, 0, Math.PI * 2);
+            ctx.fillStyle = '#FF4B4B';
+            ctx.fill();
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Sweep Beam Line
+            radarAngle += 0.02;
+            const sweepX = centerX + Math.cos(radarAngle) * maxRadius;
+            const sweepY = centerY + Math.sin(radarAngle) * maxRadius;
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(sweepX, sweepY);
+            ctx.strokeStyle = 'rgba(0, 242, 254, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            requestAnimationFrame(drawRadar);
+        }
+        drawRadar();
+
+        function setRadarLayer(layer) {
+            radarLayer = layer;
+        }
+
+        // --- AI Model Simulator Controls ---
+        function updatePrediction() {
+            const temp = parseFloat(document.getElementById('input-temp').value);
+            const pres = parseFloat(document.getElementById('input-pres').value);
+            const wind = parseFloat(document.getElementById('input-wind').value);
+            const hum = parseFloat(document.getElementById('input-hum').value);
+
+            document.getElementById('val-temp').innerText = temp.toFixed(1) + ' °C';
+            document.getElementById('val-pres').innerText = pres + ' hPa';
+            document.getElementById('val-wind').innerText = wind + ' km/h';
+            document.getElementById('val-hum').innerText = hum + ' %';
+
+            document.getElementById('stat-wind').innerText = wind + ' km/h';
+            document.getElementById('stat-pressure').innerText = pres + ' hPa';
+
+            // Calculate Risk Score
+            const risk = Math.min(100, Math.max(10, ((wind / 300) * 45) + (((1010 - pres) / 110) * 40) + ((temp / 35) * 15)));
+            document.getElementById('stat-risk').innerText = risk.toFixed(1) + ' / 100';
+
+            // Category Assessment
+            const catElem = document.getElementById('calc-category');
+            const descElem = document.getElementById('calc-desc');
+
+            if (wind > 220) {
+                catElem.innerText = "Super Cyclonic Storm";
+                catElem.className = "text-2xl font-extrabold text-rose-600 mt-1";
+                descElem.innerText = "Catastrophic damage risk. Immediate full coastal evacuation.";
+            } else if (wind > 150) {
+                catElem.innerText = "Very Severe Cyclonic Storm";
+                catElem.className = "text-2xl font-extrabold text-rose-500 mt-1";
+                descElem.innerText = "High probability of storm surge (>4.5m)";
+            } else if (wind > 90) {
+                catElem.innerText = "Severe Cyclonic Storm";
+                catElem.className = "text-2xl font-extrabold text-amber-400 mt-1";
+                descElem.innerText = "Moderate tree & coastal structure damage expected.";
+            } else {
+                catElem.innerText = "Deep Depression / Storm";
+                catElem.className = "text-2xl font-extrabold text-emerald-400 mt-1";
+                descElem.innerText = "Heavy rain alerts in effect. Monitor track closely.";
+            }
+        }
+
+        function runAiInference() {
+            alert("Running Neural Network Pipeline...\n\nFeatures Analyzed:\n- SST Anomalies\n- Upper-Level Wind Shear\n- Historical Track Analogues\n\nResult: 94.2% Confidence in Current Track Model.");
+        }
+
+        // --- Chart.js Trend Setup ---
+        const ctxChart = document.getElementById('trendChart').getContext('2d');
+        new Chart(ctxChart, {
+            type: 'line',
+            data: {
+                labels: ['-24h', '-20h', '-16h', '-12h', '-8h', '-4h', 'Now'],
+                datasets: [
+                    {
+                        label: 'Wind Speed (km/h)',
+                        data: [110, 125, 140, 155, 170, 178, 185],
+                        borderColor: '#00F2FE',
+                        backgroundColor: 'rgba(0, 242, 254, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Central Pressure (hPa)',
+                        data: [985, 978, 970, 962, 954, 948, 945],
+                        borderColor: '#FF4B4B',
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#94A3B8' } }
+                },
+                scales: {
+                    x: { ticks: { color: '#64748B' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                    y: { ticks: { color: '#64748B' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                }
+            }
+        });
+
+        // --- Modal Control ---
+        function toggleApiModal() {
+            document.getElementById('apiModal').classList.toggle('hidden');
+        }
+
+        function saveApiSettings() {
+            const mode = document.getElementById('api-mode-select').value;
+            const badge = document.getElementById('current-mode-badge');
+            
+            if (mode === 'live') {
+                badge.innerText = 'FASTAPI LIVE';
+                badge.className = 'px-2 py-0.5 rounded-full bg-cyan-500/20 text-brand-accent font-semibold text-[10px]';
+            } else {
+                badge.innerText = 'SIMULATED';
+                badge.className = 'px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-semibold text-[10px]';
+            }
+            toggleApiModal();
+        }
+    </script>
+</body>
+</html>
